@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { api } from '../services/mockApi';
+import { api } from '../services/api';
 import { NewsItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardHeader, CardTitle } from '../components/Card';

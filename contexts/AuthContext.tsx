@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import { User, AppSettings, Role } from '../types';
-import { api } from '../services/mockApi';
+import { api } from '../services/api';
 
 interface AuthContextType {
   user: User | null;

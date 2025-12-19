@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { AttendanceCircle } from '../components/AttendanceCircle';
-import { api } from '../services/mockApi';
+import { api } from '../services/api';
 import { Attendance, NewsItem, Role, Course, User } from '../types';
 import { Card, CardHeader, CardTitle } from '../components/Card';
 import { Link, Navigate } from 'react-router-dom';

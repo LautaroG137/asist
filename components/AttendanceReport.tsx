@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../services/mockApi';
+import { api } from '../services/api';
 import { Card, CardHeader, CardTitle } from './Card';
 
 interface StudentAbsenceSummary {
