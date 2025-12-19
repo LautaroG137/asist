@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface AttendanceCircleProps {
-  absences: number;
+  absences: number; // Puede ser decimal (ej: 2.5 para 2 faltas y 1 tarde)
   maxAbsences: number;
 }
 
@@ -47,7 +47,7 @@ export const AttendanceCircle: React.FC<AttendanceCircleProps> = ({ absences, ma
         />
       </svg>
       <div className={`absolute flex flex-col items-center justify-center ${colorClass}`}>
-        <span className="text-4xl font-bold">{absences}</span>
+        <span className="text-4xl font-bold">{absences % 1 === 0 ? absences : absences.toFixed(1)}</span>
         <span className="text-sm">Faltas</span>
       </div>
     </div>

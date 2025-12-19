@@ -507,17 +507,30 @@ export const api = {
 
     const summaries = await Promise.all(
       students.map(async (student) => {
-        const { count, error } = await supabase
+        // Contar faltas (absent)
+        const { count: absentCount, error: absentError } = await supabase
           .from('attendance')
           .select('*', { count: 'exact', head: true })
           .eq('student_id', student.id)
           .eq('status', 'absent');
 
+        // Contar tardes (late) - cada una cuenta como 0.5
+        const { count: lateCount, error: lateError } = await supabase
+          .from('attendance')
+          .select('*', { count: 'exact', head: true })
+          .eq('student_id', student.id)
+          .eq('status', 'late');
+
+        const absences = absentError ? 0 : (absentCount || 0);
+        const lates = lateError ? 0 : (lateCount || 0);
+        // Tardes cuentan como media falta
+        const totalAbsences = absences + (lates * 0.5);
+
         return {
           studentId: student.id,
           name: student.name,
           course: student.course || undefined,
-          absenceCount: error ? 0 : (count || 0),
+          absenceCount: totalAbsences,
         };
       })
     );

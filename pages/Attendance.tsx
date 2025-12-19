@@ -6,8 +6,8 @@ import { useNotification } from '../contexts/NotificationContext';
 
 export const AttendancePage: React.FC = () => {
   const [students, setStudents] = useState<User[]>([]);
-  const [initialRecords, setInitialRecords] = useState<Map<number, 'present' | 'absent'>>(new Map());
-  const [attendanceRecords, setAttendanceRecords] = useState<Map<number, 'present' | 'absent'>>(new Map());
+  const [initialRecords, setInitialRecords] = useState<Map<number, 'present' | 'absent' | 'late'>>(new Map());
+  const [attendanceRecords, setAttendanceRecords] = useState<Map<number, 'present' | 'absent' | 'late'>>(new Map());
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [courses, setCourses] = useState<string[]>([]);
   const [selectedCourse, setSelectedCourse] = useState('');
@@ -38,13 +38,17 @@ export const AttendancePage: React.FC = () => {
     // Note: This fetches all attendance for a day. We assume a student marked absent by a preceptor
     // is absent from all classes. The UI shows a single status per student for the day.
     api.getAttendanceForDate(selectedDate).then(attendanceData => {
-      const recordsMap = new Map<number, 'present' | 'absent'>();
+      const recordsMap = new Map<number, 'present' | 'absent' | 'late'>();
       // We only care about students in the selected course/group
       const relevantStudents = students.filter(s => s.course === selectedCourse);
       relevantStudents.forEach(student => {
-        // If there's at least one absence record for this student on this day, mark them absent.
-        const hasAbsence = attendanceData.some(a => a.studentId === student.id && a.status !== 'present');
-        recordsMap.set(student.id, hasAbsence ? 'absent' : 'present');
+        // Find attendance record for this student on this day
+        const attendanceRecord = attendanceData.find(a => a.studentId === student.id);
+        if (attendanceRecord && attendanceRecord.status !== 'present') {
+          recordsMap.set(student.id, attendanceRecord.status === 'late' ? 'late' : 'absent');
+        } else {
+          recordsMap.set(student.id, 'present');
+        }
       });
       setAttendanceRecords(recordsMap);
       setInitialRecords(new Map(recordsMap));
@@ -54,7 +58,7 @@ export const AttendancePage: React.FC = () => {
   }, [selectedDate, selectedCourse, students]);
 
 
-  const handleStatusChange = (studentId: number, status: 'present' | 'absent') => {
+  const handleStatusChange = (studentId: number, status: 'present' | 'absent' | 'late') => {
     const newRecords = new Map(attendanceRecords);
     newRecords.set(studentId, status);
     setAttendanceRecords(newRecords);
@@ -154,6 +158,16 @@ export const AttendancePage: React.FC = () => {
                         }`}
                       >
                         Presente
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(student.id, 'late')}
+                        className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                          attendanceRecords.get(student.id) === 'late'
+                            ? 'bg-yellow-600 text-white'
+                            : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                        }`}
+                      >
+                        Tarde
                       </button>
                       <button
                         onClick={() => handleStatusChange(student.id, 'absent')}

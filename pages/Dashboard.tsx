@@ -43,15 +43,18 @@ const StudentDashboard: React.FC = () => {
                     const courseAbsences = attendance.filter(a => a.courseId === course.id && a.status === 'absent').length;
                     const courseJustified = attendance.filter(a => a.courseId === course.id && a.status === 'justified').length;
                     const courseLates = attendance.filter(a => a.courseId === course.id && a.status === 'late').length;
+                    // Tardes cuentan como media falta
+                    const totalAbsences = courseAbsences + (courseLates * 0.5);
 
                     return (
                         <div key={course.id} className="bg-gray-700 p-4 rounded-lg flex flex-col items-center">
                             <h3 className="text-lg font-bold text-white mb-2">{course.name}</h3>
-                             <AttendanceCircle absences={courseAbsences} maxAbsences={course.maxAbsences} />
+                             <AttendanceCircle absences={totalAbsences} maxAbsences={course.maxAbsences} />
                             <p className="mt-2 text-gray-400 text-sm">Límite: {course.maxAbsences} faltas</p>
                             <div className="text-xs mt-3 text-center text-gray-300">
+                                <p>Faltas: {courseAbsences}</p>
                                 <p>Justificadas: {courseJustified}</p>
-                                <p>Tardes: {courseLates}</p>
+                                <p>Tardes: {courseLates} (0.5 c/u)</p>
                             </div>
                         </div>
                     );

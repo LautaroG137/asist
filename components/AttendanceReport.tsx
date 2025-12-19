@@ -6,7 +6,7 @@ interface StudentAbsenceSummary {
     studentId: number;
     name: string;
     course: string | undefined;
-    absenceCount: number;
+    absenceCount: number; // Puede ser decimal (tardes cuentan como 0.5)
 }
 
 
@@ -27,7 +27,7 @@ const AbsenceBarChart: React.FC<{ data: StudentAbsenceSummary[] }> = ({ data }) 
                              >
                              </div>
                          </div>
-                         <span className="font-bold text-red-400 w-8 text-right">{student.absenceCount}</span>
+                         <span className="font-bold text-red-400 w-12 text-right">{student.absenceCount % 1 === 0 ? student.absenceCount : student.absenceCount.toFixed(1)}</span>
                     </div>
                 </div>
             ))}
