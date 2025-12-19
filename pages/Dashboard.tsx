@@ -61,6 +61,14 @@ const StudentDashboard: React.FC = () => {
                 })}
                  {courses.length === 0 && <p className="text-gray-400 col-span-full text-center">No estás inscripto en ningún curso.</p>}
             </div>
+            <div className="mt-6">
+                <Link 
+                    to="/mis-inasistencias" 
+                    className="block text-center w-full px-4 py-3 bg-primary-600 text-white font-bold rounded-lg hover:bg-primary-700 transition duration-300"
+                >
+                    Ver Mis Inasistencias y Subir Certificados
+                </Link>
+            </div>
         </Card>
     );
 };
@@ -83,6 +91,9 @@ const PreceptorDashboard: React.FC = () => {
                  <div className="flex flex-col gap-4">
                      <Link to="/asistencia" className="block text-center w-full px-4 py-3 bg-primary-600 text-white font-bold rounded-lg hover:bg-primary-700 transition duration-300">
                         Tomar Asistencia
+                     </Link>
+                     <Link to="/verificar-certificados" className="block text-center w-full px-4 py-3 bg-yellow-600 text-white font-bold rounded-lg hover:bg-yellow-700 transition duration-300">
+                        Verificar Certificados
                      </Link>
                      <Link to="/novedades" className="block text-center w-full px-4 py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition duration-300">
                         Gestionar Novedades

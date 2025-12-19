@@ -19,6 +19,11 @@ interface DbAttendance {
   course_id: number;
   date: string;
   status: 'absent' | 'justified' | 'late';
+  certificate_url: string | null;
+  certificate_status: 'pending' | 'approved' | 'rejected' | null;
+  verified_by: number | null;
+  verified_at: string | null;
+  rejection_reason: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,10 +60,16 @@ const dbUserToUser = (dbUser: DbUser): User => ({
 });
 
 const dbAttendanceToAttendance = (dbAttendance: DbAttendance): Attendance => ({
+  id: dbAttendance.id,
   studentId: dbAttendance.student_id,
   date: dbAttendance.date,
   status: dbAttendance.status === 'justified' ? 'justified' : dbAttendance.status === 'late' ? 'late' : 'absent',
   courseId: dbAttendance.course_id,
+  certificateUrl: dbAttendance.certificate_url || undefined,
+  certificateStatus: dbAttendance.certificate_status || undefined,
+  verifiedBy: dbAttendance.verified_by || undefined,
+  verifiedAt: dbAttendance.verified_at || undefined,
+  rejectionReason: dbAttendance.rejection_reason || undefined,
 });
 
 const dbNewsToNewsItem = async (dbNews: DbNews): Promise<NewsItem> => {
@@ -560,6 +571,96 @@ export const api = {
 
     const subjectNames = new Set(data.map(c => c.subject));
     return Array.from(subjectNames).sort();
+  },
+
+  // --- CERTIFICATE MANAGEMENT FUNCTIONS ---
+  uploadCertificate: async (attendanceId: number, file: File): Promise<string> => {
+    // Crear nombre único para el archivo
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${attendanceId}_${Date.now()}.${fileExt}`;
+    const filePath = `certificates/${fileName}`;
+
+    // Subir archivo a Supabase Storage
+    const { data, error } = await supabase.storage
+      .from('certificates')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    // Obtener URL pública del archivo
+    const { data: urlData } = supabase.storage
+      .from('certificates')
+      .getPublicUrl(filePath);
+
+    if (!urlData?.publicUrl) throw new Error('No se pudo obtener la URL del archivo');
+
+    // Actualizar el registro de asistencia con la URL del certificado
+    const { error: updateError } = await supabase
+      .from('attendance')
+      .update({
+        certificate_url: urlData.publicUrl,
+        certificate_status: 'pending'
+      })
+      .eq('id', attendanceId);
+
+    if (updateError) throw updateError;
+
+    return urlData.publicUrl;
+  },
+
+  getPendingCertificates: async (): Promise<Attendance[]> => {
+    const { data, error } = await supabase
+      .from('attendance')
+      .select('*')
+      .eq('certificate_status', 'pending')
+      .not('certificate_url', 'is', null)
+      .order('date', { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(dbAttendanceToAttendance);
+  },
+
+  approveCertificate: async (attendanceId: number, verifiedBy: number): Promise<void> => {
+    const { error } = await supabase
+      .from('attendance')
+      .update({
+        certificate_status: 'approved',
+        verified_by: verifiedBy,
+        verified_at: new Date().toISOString(),
+        status: 'justified' // Cambiar el status a justified cuando se aprueba
+      })
+      .eq('id', attendanceId);
+
+    if (error) throw error;
+  },
+
+  rejectCertificate: async (attendanceId: number, verifiedBy: number, reason: string): Promise<void> => {
+    const { error } = await supabase
+      .from('attendance')
+      .update({
+        certificate_status: 'rejected',
+        verified_by: verifiedBy,
+        verified_at: new Date().toISOString(),
+        rejection_reason: reason
+      })
+      .eq('id', attendanceId);
+
+    if (error) throw error;
+  },
+
+  getAttendanceWithCertificates: async (studentId: number): Promise<Attendance[]> => {
+    const { data, error } = await supabase
+      .from('attendance')
+      .select('*')
+      .eq('student_id', studentId)
+      .in('status', ['absent', 'late'])
+      .order('date', { ascending: false });
+
+    if (error || !data) return [];
+    return data.map(dbAttendanceToAttendance);
   },
 };
 

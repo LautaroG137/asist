@@ -10,6 +10,8 @@ import { Dashboard } from './pages/Dashboard';
 import { AttendancePage } from './pages/Attendance';
 import { NewsPage } from './pages/News';
 import { AdminPage } from './pages/Admin';
+import { MyAbsencesPage } from './pages/MyAbsences';
+import { CertificateVerificationPage } from './pages/CertificateVerification';
 
 // Import Components
 import { Layout } from './components/Layout';
@@ -50,6 +52,11 @@ const App: React.FC = () => (
             {/* Routes with specific role-based protection */}
             <Route element={<ProtectedRoute allowedRoles={[Role.Admin, Role.Preceptor]} />}>
               <Route path="/asistencia" element={<AttendancePage />} />
+              <Route path="/verificar-certificados" element={<CertificateVerificationPage />} />
+            </Route>
+            
+            <Route element={<ProtectedRoute allowedRoles={[Role.Student]} />}>
+              <Route path="/mis-inasistencias" element={<MyAbsencesPage />} />
             </Route>
             
             <Route element={<ProtectedRoute allowedRoles={[Role.Admin]} />}>

@@ -15,10 +15,16 @@ export interface User {
 }
 
 export interface Attendance {
+  id?: number;
   studentId: number;
   date: string; // YYYY-MM-DD
   status: 'present' | 'absent' | 'justified' | 'late';
   courseId: number;
+  certificateUrl?: string;
+  certificateStatus?: 'pending' | 'approved' | 'rejected';
+  verifiedBy?: number;
+  verifiedAt?: string;
+  rejectionReason?: string;
 }
 
 export interface NewsItem {
