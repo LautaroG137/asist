@@ -70,9 +70,10 @@ export const MyAbsencesPage: React.FC = () => {
       // Recargar datos
       const updatedAbsences = await api.getAttendanceWithCertificates(user!.id);
       setAbsences(updatedAbsences);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al subir certificado:', error);
-      addNotification('Error al subir el certificado. Intenta nuevamente.', 'error');
+      const errorMessage = error?.message || 'Error al subir el certificado. Intenta nuevamente.';
+      addNotification(errorMessage, 'error');
     } finally {
       setUploading(null);
     }

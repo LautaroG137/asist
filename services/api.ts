@@ -578,37 +578,64 @@ export const api = {
     // Crear nombre único para el archivo
     const fileExt = file.name.split('.').pop();
     const fileName = `${attendanceId}_${Date.now()}.${fileExt}`;
-    const filePath = `certificates/${fileName}`;
+    // El path no debe incluir el nombre del bucket, solo la ruta dentro del bucket
+    const filePath = fileName;
 
-    // Subir archivo a Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('certificates')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+    try {
+      // Subir archivo a Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('certificates')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-    if (error) throw error;
+      if (error) {
+        console.error('Error de Storage:', error);
+        // Proporcionar mensajes de error más descriptivos
+        if (error.message?.includes('new row violates row-level security')) {
+          throw new Error('No tienes permisos para subir archivos. Contacta al administrador.');
+        } else if (error.message?.includes('Bucket not found')) {
+          throw new Error('El bucket de certificados no está configurado. Contacta al administrador.');
+        } else {
+          throw new Error(`Error al subir el archivo: ${error.message || 'Error desconocido'}`);
+        }
+      }
 
-    // Obtener URL pública del archivo
-    const { data: urlData } = supabase.storage
-      .from('certificates')
-      .getPublicUrl(filePath);
+      // Obtener URL pública del archivo
+      const { data: urlData } = supabase.storage
+        .from('certificates')
+        .getPublicUrl(filePath);
 
-    if (!urlData?.publicUrl) throw new Error('No se pudo obtener la URL del archivo');
+      if (!urlData?.publicUrl) {
+        throw new Error('No se pudo obtener la URL del archivo subido');
+      }
 
-    // Actualizar el registro de asistencia con la URL del certificado
-    const { error: updateError } = await supabase
-      .from('attendance')
-      .update({
-        certificate_url: urlData.publicUrl,
-        certificate_status: 'pending'
-      })
-      .eq('id', attendanceId);
+      // Actualizar el registro de asistencia con la URL del certificado
+      const { error: updateError } = await supabase
+        .from('attendance')
+        .update({
+          certificate_url: urlData.publicUrl,
+          certificate_status: 'pending'
+        })
+        .eq('id', attendanceId);
 
-    if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error al actualizar attendance:', updateError);
+        throw new Error(`Error al guardar la información del certificado: ${updateError.message}`);
+      }
 
-    return urlData.publicUrl;
+      return urlData.publicUrl;
+    } catch (error: any) {
+      // Si hay un error, intentar eliminar el archivo subido si existe
+      try {
+        await supabase.storage.from('certificates').remove([filePath]);
+      } catch (cleanupError) {
+        // Ignorar errores de limpieza
+        console.warn('No se pudo limpiar el archivo:', cleanupError);
+      }
+      throw error;
+    }
   },
 
   getPendingCertificates: async (): Promise<Attendance[]> => {
